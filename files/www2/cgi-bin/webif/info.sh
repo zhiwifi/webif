@@ -29,7 +29,7 @@ FORM_hostname="${FORM_hostname:-OpenWrt}"
 config_clear "$hostname_cfg"
 
 board_type=$(cat /proc/cpuinfo 2>/dev/null | sed 2,20d | cut -c16-)
-wifisong_version=$(cat /etc/wifixi/version)
+wifisong_version=$(cat /etc/version)
 
 wan_address=`ubus call network.interface.wan status | grep -A2 pv4-address | awk 'NR==3, /.+/{ print $2 }' | sed -r 's/(")([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(",)/\2/'`
 wan_mask=`ifconfig | grep -A1 eth1 | awk 'NR==2, /.+/{ print $4}' | sed -r 's/(Mask:)(.+)/\2/'`
@@ -536,7 +536,7 @@ start_form|@TR<<>>
 field|@TR<<路由器型号：>>                                                                                                                          
 string|WiFiSong第二代智能路由器
 field|@TR<<固件版本：>>
-string|WiFiSong-$wifisong_version
+string|$wifisong_version
 field|@TR<<工作模式：>>
 string|认证模式+AP模式
 field|@TR<<当前本地时间：>>
