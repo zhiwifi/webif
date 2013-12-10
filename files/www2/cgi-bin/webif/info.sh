@@ -32,7 +32,14 @@ board_type=$(cat /proc/cpuinfo 2>/dev/null | sed 2,20d | cut -c16-)
 wifisong_version=$(cat /etc/version)
 
 wan_address=`ubus call network.interface.wan status | grep -A2 pv4-address | awk 'NR==3, /.+/{ print $2 }' | sed -r 's/(")([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(",)/\2/'`
-wan_mask=`ifconfig | grep -A1 eth1 | awk 'NR==2, /.+/{ print $4}' | sed -r 's/(Mask:)(.+)/\2/'`
+
+wan_type=`uci get network.wan.type`
+if [ "$wan_type" = "" ]; then
+	wan_mask=`ifconfig | grep -A1 eth1 | awk 'NR==2, /.+/{ print $4}' | sed -r 's/(Mask:)(.+)/\2/'`
+else
+	wan_mask=`ifconfig | grep -A1 br-wan | awk 'NR==2, /.+/{ print $4}' | sed -r 's/(Mask:)(.+)/\2/'`
+fi
+
 wan_gateway=`route -n | grep UG | awk '/.+/ { print $2 }'`
 wan_dns1=`ubus call network.interface.wan status | grep -A2 dns-server | awk 'NR==2, /.+/{ print $1 }' | sed -r '/(")([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(",?)/!d;s//\2/'`
 wan_dns2=`ubus call network.interface.wan status | grep -A2 dns-server | awk 'NR==3, /.+/{ print $1 }' | sed -r '/(")([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(",?)/!d;s//\2/'`
@@ -138,6 +145,7 @@ done
 ################## interface - wan ################
 config_get delete_check wan proto
 if empty "$FORM_submit"; then
+	config_get FORM_type wan type
 	config_get FORM_proto wan proto
 	config_get FORM_ipaddr wan ipaddr
 	config_get FORM_netmask wan netmask
@@ -146,6 +154,7 @@ if empty "$FORM_submit"; then
 	config_get FORM_passwd wan passwd
 	config_get FORM_dns wan dns
 else
+	config_get FORM_type wan type
 	eval FORM_proto="\$FORM_wan_proto"
 	eval FORM_ipaddr="\$FORM_wan_ipaddr"
 	eval FORM_netmask="\$FORM_wan_netmask"
@@ -180,7 +189,7 @@ else
 	}                                                            
 fi                                                                   
  
-if [ $FORM_type = "" ]; then
+if [ $FORM_type = "bridge" ]; then
 	wan_options="start_form|
 		field|@TR<<网络连接类型>>
 		string|中继模式
@@ -284,6 +293,11 @@ else
 	eval FORM_ssid_prefix="\$FORM_ssid_cfg033579"
 	eval FORM_key="\$FORM_wpa_psk_cfg073579"
 
+validate <<EOF
+string|FORM_ssid_cfg033579|@TR<<网络名称>>|required|$FORM_ssid
+wpapsk|FORM_wpa_psk_cfg073579|@TR<<密码设置>>||$FORM_key
+EOF
+
 	if [ "$?" = 0 ]; then
 		uci_set "wireless" "cfg033579" "ssid" "$FORM_ssid_prefix"-WiFiSong
 		uci_set "wireless" "cfg073579" "ssid" "$FORM_ssid_prefix"-Office
@@ -351,8 +365,8 @@ EOF
 	}
 
 	validate <<EOF
-int|FORM_wan_dowload|@TR<<WAN Download Speed>>||$FORM_wan_download
-int|FORM_wan_upload|@TR<<WAN Upload Speed>>||$FORM_wan_upload
+int|FORM_wan_dowload|@TR<<WAN下载速度>>||$FORM_wan_download
+int|FORM_wan_upload|@TR<<WAN上传速度>>||$FORM_wan_upload
 EOF
 	equal "$?" "0" && {
 		SAVED=1

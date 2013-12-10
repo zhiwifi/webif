@@ -12,7 +12,7 @@ case "$FORM_mode" in
 	clear)
 		rm -r /tmp/.webif/* >&- 2>&-
 		rm /tmp/.uci/* >&- 2>&-
-		wifisong_header "$FORM_cat" "" "@TR<<Config discarded.|新设置已被取消取消.>>"
+		wifisong_header "$FORM_cat" "" "@TR<<Config discarded.|新设置已被取消.>>"
 		CHANGES=""
 		echo "${FORM_prev:+<meta http-equiv=\"refresh\" content=\"2; URL=$FORM_prev\" />}"
 		;;
