@@ -168,7 +168,7 @@ else
 		uci_set "network" "wan" "netmask" "$FORM_netmask"
 		uci_set "network" "wan" "gateway" "$FORM_gateway"
 		uci_set "network" "wan" "username" "$FORM_username"
-		uci_set "network" "wan" "passwd" "$FORM_passwd"
+		uci_set "network" "wan" "password" "$FORM_passwd"
 		uci_set "network" "wan" "dns" "$FORM_dns"
 		
 		case "$FORM_proto" in
@@ -294,7 +294,6 @@ else
 	eval FORM_key="\$FORM_wpa_psk_cfg073579"
 
 validate <<EOF
-string|FORM_ssid_cfg033579|@TR<<网络名称>>|required|$FORM_ssid
 wpapsk|FORM_wpa_psk_cfg073579|@TR<<密码设置>>||$FORM_key
 EOF
 
@@ -364,10 +363,10 @@ EOF
 		fi
 	}
 
-	validate <<EOF
-int|FORM_wan_dowload|@TR<<WAN下载速度>>||$FORM_wan_download
-int|FORM_wan_upload|@TR<<WAN上传速度>>||$FORM_wan_upload
-EOF
+#	validate <<EOF
+#int|FORM_wan_dowload|@TR<<WAN下载速度>>||$FORM_wan_download
+#int|FORM_wan_upload|@TR<<WAN上传速度>>||$FORM_wan_upload
+#EOF
 	equal "$?" "0" && {
 		SAVED=1
 		uci_load qos # to check existing variables
