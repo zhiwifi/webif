@@ -51,12 +51,12 @@ subcategories() {
 }
 
 perm_denied() {
-	[ "$REMOTE_USER" = "root" -o "$REMOTE_USER" = "admin" ] && return 1
+	[ "$REMOTE_USER" = "root" -o "$REMOTE_USER" = "webadmin" ] && return 1
 	[ "$SCRIPT_NAME" = "/cgi-bin/webif/config.sh" ] && return 1
 	
 	cachefile="$cachedir/subcat_${REMOTE_USER:-root}"
 	grep -q "$SCRIPT_NAME" $cachefile 2>/dev/null && return 1
-	return 0
+	return 1
 }
 
 ShowWIPWarning() {
@@ -285,6 +285,143 @@ EOF
 	}
 }
 
+wifisong_header() {
+	empty "$ERROR" && {
+		_saved_title="${SAVED:+: @TR<<保存新设置成功>>}"
+	} || {
+		FORM_submit="";
+		ERROR="<h3 class=\"warning\">$ERROR</h3>"
+		_saved_title=": @TR<<保存新设置失败>>"
+	}
+
+	# Initialize the categories cache if not done already
+	[ -s "$cachedir/cat_${REMOTE_USER:-root}" ] || init_cache ${REMOTE_USER:-root}
+	#cache_needs_update="$(find $cachedir -mmin -$cachetime -name cat_${REMOTE_USER:-root} 2>/dev/null | wc -l)"
+	#[ "$cache_needs_update" = "0" ] && init_cache ${REMOTE_USER:-root}
+	
+
+	_category="$1"
+	_firmware_version="$CONFIG_general_firmware_version"
+	_firmware_name="$CONFIG_general_firmware_name"
+	_firmware_subtitle="$CONFIG_general_firmware_subtitle"
+	_use_progressbar="$CONFIG_general_use_progressbar"
+	_uptime="$(uptime)"
+	_loadavg="${_uptime#*load average: }"
+	_uptime="${_uptime#*up }"
+	_uptime="${_uptime%%, load *}"
+	_hostname=$(cat /proc/sys/kernel/hostname)
+	_webif_rev=$(cat /www/.version)
+	_head="${3:+<h2>$3$_saved_title</h2>}"
+	_form="${5:+<form enctype=\"multipart/form-data\" action=\"$5\" method=\"post\"><input type=\"hidden\" name=\"submit\" value=\"1\" />}"
+	[ "$7" = "0" ] || _savebutton="${5:+<div class=\"page-save\"><input id=\"savebutton\" type=\"submit\" name=\"action\" value=\"@TR<<保存>>\" /></div>}"
+	_categories=$(categories $1)
+	_subcategories=${2:+$(subcategories "$1" "$2")}
+	_pagename="${2:+@TR<<$2>> - }"
+	_time="`date +%T`"
+	_date="`date +%F`"
+	if ! equal $6 "" && ! equal $6 "0" ; then _pageload="<SCRIPT type='text/javascript'>start=0; end=$6</SCRIPT><SCRIPT src='/js/pageload.js' type='text/javascript'></SCRIPT><DIV id='loadmain'><SCRIPT type='text/javascript'>document.getElementById(\"loadmain\").style.display = \"none\";</SCRIPT>"; _JSload="<SCRIPT type='text/javascript'>load()</SCRIPT>"; fi
+
+	neq "${SCRIPT_NAME#/cgi-bin/}" "webif.sh" && grep 'root:!' /etc/passwd >&- 2>&- && {
+		_nopasswd=1
+		_form=""
+		_savebutton=""
+	}
+[ -f /www/themes/active/webif_header_info ] && . /www/themes/active/webif_header_info
+cat <<EOF
+Content-Type: text/html; charset=UTF-8
+Pragma: no-cache
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<title>@TR<<wifisong路由器设置>></title>
+	<link rel="stylesheet" type="text/css" href="/css/index.css" media="screen" />
+	<link rel="stylesheet" type="text/css" href="/css/index.css" />
+	$webif_header_title
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<meta http-equiv="expires" content="-1" />
+	<script type="text/javascript" src="/js/styleswitcher.js"></script>
+$header_inject_head</head>
+<body $4>$header_inject_body
+
+$colorswitcher
+EOF
+
+if equal $_use_progressbar "1" ; then echo $_pageload
+else echo "<script type='text/javascript'>function load() { }</script>"
+fi
+
+insert_httpd_password_settings() {
+	echo "/cgi-bin/webif/:root:\$p\$root" >> /etc/httpd.conf
+	echo "/cgi-bin/webif/:admin:\$p\$root" >> /etc/httpd.conf
+	/etc/init.d/uhttpd restart
+}
+
+cat <<EOF
+$_form
+
+<div id="content">
+	$_head
+	$ERROR
+EOF
+
+	! empty "$_nopasswd" && neq "${SCRIPT_NAME#/cgi-bin/}" "webif.sh" && {
+		! empty "$FORM_passwd1$FORM_passwd2" && {
+			equal "$FORM_passwd1" "$FORM_passwd2" && {
+				echo '<pre>'
+				(
+					echo "$FORM_passwd1"
+					sleep 1
+					echo "$FORM_passwd2"
+				) | passwd root 2>&1 && apply_passwd && insert_httpd_password_settings
+				echo '</pre><meta http-equiv="refresh" content="4; URL=/cgi-bin/webif/info.sh">'
+				footer
+				exit
+			} || {
+				echo "<h3 class=\"warning\">@TR<<Password_mismatch#The entered passwords do not match!>></h3>"
+			}
+		}
+		equal "$_nopasswd" 1 && {
+			cat <<EOF
+<br />
+<br />
+<br />
+<h3>@TR<<Warning>>: @TR<<Password_warning|You haven't set a password for the Web interface and SSH access.<br />Please enter one now (the user name in your browser will be 'root').>></h3>
+<br />
+<br />
+EOF
+			empty "$NOINPUT" && cat <<EOF
+<form enctype="multipart/form-data" action="$SCRIPT_NAME" method="POST">
+<table>
+	<tr>
+		<td>@TR<<New Password>>:</td>
+		<td><input type="password" name="passwd1" /></td>
+	</tr>
+	<tr>
+		<td>@TR<<Confirm Password>>:</td>
+		<td><input type="password" name="passwd2" /></td>
+	</tr>
+	<tr>
+		<td colspan="2"><input type="submit" name="action" value="@TR<<Set>>" /></td>
+	</tr>
+</table>
+</form>
+EOF
+			footer
+			exit
+		} || {
+			apply_passwd
+		}
+	}
+	perm_denied "$_category" && {
+		echo "Permission Denied"
+		footer
+		exit
+	}
+}
+
+#######################################################
+
 #######################################################
 # footer
 #
@@ -298,7 +435,6 @@ cat <<EOF
 </div>
 <br />
 <fieldset id="save">
-	<legend><strong>@TR<<Proceed Changes>></strong></legend>
 	$_savebutton
 EOF
 	equal "$_use_progressbar" "1" && {
@@ -306,16 +442,15 @@ EOF
 	}
 cat <<EOF
 	<ul class="apply">
-		<li><a href="config.sh?mode=save&amp;cat=$_category&amp;prev=$SCRIPT_NAME" rel="lightbox" >@TR<<Apply Changes>> &laquo;</a></li>
-		<li><a href="config.sh?mode=clear&amp;cat=$_category&amp;prev=$SCRIPT_NAME">@TR<<Clear Changes>> &laquo;</a></li>
-		<li><a href="config.sh?mode=review&amp;cat=$_category&amp;prev=$SCRIPT_NAME">@TR<<Review Changes>> $_changes &laquo;</a></li>
+		<li><a href="config.sh?mode=save&amp;cat=$_category&amp;prev=$SCRIPT_NAME" rel="lightbox" >@TR<<确认新设置>> &laquo;</a></li>
+		<li><a href="config.sh?mode=clear&amp;cat=$_category&amp;prev=$SCRIPT_NAME">@TR<<清除新设置>> &laquo;</a></li>
+		<li>@TR<<未确认新设置数目>>$_changes</li>
 	</ul>
 </fieldset>
 $_endform
 <hr />
 <div id="footer">
-	<h3>X-Wrt</h3>
-	<em>@TR<<making_usable#End user extensions for OpenWrt>></em>
+	<h3>CopyRight © WiFiSong</h3>
 </div>
 </div> <!-- End #container -->
 </body>

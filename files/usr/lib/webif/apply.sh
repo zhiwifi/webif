@@ -29,6 +29,7 @@ HANDLERS_file='
 	ethers) rm -f /etc/ethers; mv $config /etc/ethers; killall -HUP dnsmasq ;;
 	dnsmasq.conf) mv /tmp/.webif/file-dnsmasq.conf /etc/dnsmasq.conf && /etc/init.d/dnsmasq restart;;
 	httpd.conf) mv -f /tmp/.webif/file-httpd.conf /etc/httpd.conf && HTTP_RESTART=1 ;;
+	chilli.conf) mv -f /tmp/.webif/file-chilli.conf /etc/chilli/defaults;;
 '
 
 # for some reason a for loop with "." doesn't work
@@ -90,7 +91,7 @@ reload_upnpd() {
 # file-*		other config files
 for config in $(ls file-* 2>&-); do
 	name=${config#file-}
-	echo "@TR<<Processing>> @TR<<config file>>: $name"
+	echo "@TR<<正在处理配置文件,完成后若浏览器没有自动跳转,请刷新网页>>"
 	eval 'case "$name" in
 		'"$HANDLERS_file"'
 	esac'
@@ -164,13 +165,13 @@ reload_qos() {
 	config_load qos
 	config_get_bool wan_enabled wan enabled 0
 	if [ 1 -eq "$wan_enabled" ]; then
-		echo '@TR<<Starting>> @TR<<qos>> ...'
+		echo '@TR<<开始>> @TR<<qos>> ...'
 		[ -f /etc/init.d/qos ] && {
 			/etc/init.d/qos enable >&- 2>&- <&-
 			/etc/init.d/qos start >&- 2>&- <&-
 		}
 	else
-		echo '@TR<<Stopping>> @TR<<qos>> ...'
+		echo '@TR<<停止>> @TR<<qos>> ...'
 		[ -f /etc/init.d/qos ] && {
 			/etc/init.d/qos stop >&- 2>&- <&-
 			/etc/init.d/qos disable >&- 2>&- <&-
@@ -214,11 +215,17 @@ for ucifile in $(ls /tmp/.uci/* 2>&-); do
 	config_allclear
 
 	# commit settings
-	echo "@TR<<Committing>> $package ..."
+	case "$package" in
+		"network")
+			echo "@TR<<正在确认网络设置>> ..."
+			;;
+		"wireless")
+			echo "@TR<<正在确认无线设置>> ..."
+	esac
 	uci_commit "$package"
 done
 
-[ -n "$process_packages" ] && echo "@TR<<Waiting for the commit to finish>>..."
+[ -n "$process_packages" ] && echo "@TR<<等待设置确认完成>> ..."
 LOCK=`which lock` || LOCK=:
 for ucilock in $(ls /tmp/.uci/*.lock 2>&-); do
 	$LOCK -w "$ucilock"
@@ -248,13 +255,14 @@ for package in $process_packages; do
 			reload_upnpd
 			;;
 		"network")
-			echo '@TR<<Reloading>> @TR<<network>> ...'
+			echo '@TR<<正在加载>> @TR<<新网络设置>> ...'
 			/etc/init.d/network restart
 			sleep 3
 			killall dnsmasq
 			if [ -f /etc/rc.d/S??dnsmasq ]; then
 				/etc/init.d/dnsmasq start
 			fi
+			/etc/init.d/chilli restart
 			;;
 		"ntpclient")
 			killall ntpclient
@@ -265,7 +273,7 @@ for package in $process_packages; do
 			[ -z "$(ps | grep "[d]nsmasq ")" ] && /etc/init.d/dnsmasq start
 			;;
 		"wireless")
-			echo '@TR<<Reloading>> @TR<<wireless>> ...'
+			echo '@TR<<正在加载>> @TR<<新无线设置>> ...'
 			wifi ;;
 		"webifopenvpn")
 			echo '@TR<<Reloading>> @TR<<OpenVPN>> ...'

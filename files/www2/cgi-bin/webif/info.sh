@@ -31,22 +31,24 @@ config_clear "$hostname_cfg"
 board_type=$(cat /proc/cpuinfo 2>/dev/null | sed 2,20d | cut -c16-)
 wifisong_version=$(cat /etc/version)
 
-wan_address=`ubus call network.interface.wan status | grep -A2 pv4-address | awk 'NR==3, /.+/{ print $2 }' | sed -r 's/(")([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(",)/\2/'`
-
-wan_type=`uci get network.wan.type`
-if [ "$wan_type" = "" ]; then
-	wan_mask=`ifconfig | grep -A1 eth1 | awk 'NR==2, /.+/{ print $4}' | sed -r 's/(Mask:)(.+)/\2/'`
-else
-	wan_mask=`ifconfig | grep -A1 br-wan | awk 'NR==2, /.+/{ print $4}' | sed -r 's/(Mask:)(.+)/\2/'`
+wan_status=`ubus call network.interface.wan status | grep "up" | grep false`
+if [[ "$wan_status" = "" ]]; then
+	wan_address=`ubus call network.interface.wan status | grep -A2 pv4-address | awk 'NR==3, /.+/{ print $2 }' | sed -r 's/(")([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(",)/\2/'`
+	wan_type=`uci get network.wan.type`
+	if [ "$wan_type" = "" ]; then
+		wan_mask=`ifconfig | grep -A1 eth1 | awk 'NR==2, /.+/{ print $4}' | sed -r 's/(Mask:)(.+)/\2/'`
+	else
+		wan_mask=`ifconfig | grep -A1 br-wan | awk 'NR==2, /.+/{ print $4}' | sed -r 's/(Mask:)(.+)/\2/'`
+	fi
+	wan_gateway=`route -n | grep UG | awk '/.+/ { print $2 }'`
+	wan_dns1=`ubus call network.interface.wan status | grep -A2 dns-server | awk 'NR==2, /.+/{ print $1 }' | sed -r '/(")([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(",?)/!d;s//\2/'`
+	wan_dns2=`ubus call network.interface.wan status | grep -A2 dns-server | awk 'NR==3, /.+/{ print $1 }' | sed -r '/(")([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(",?)/!d;s//\2/'`
+	wan_uptime=`ubus call network.interface.wan status | grep uptime | awk '/.+/{print $2}' | sed -r 's/([0-9]+)(,?)/\1/'`
+	wan_uptime_days=$(( $wan_uptime/3600/24 ))
+	wan_uptime_hours=$(( $wan_uptime/3600 - $wan_uptime_days*24 ))
+	wan_uptime_minutes=$(( $wan_uptime/60 - $wan_uptime_days*24*60 - $wan_uptime_hours*60 ))
+	wan_uptime_string=$wan_uptime_days天$wan_uptime_hours小时$wan_uptime_minutes分钟
 fi
-
-wan_gateway=`route -n | grep UG | awk '/.+/ { print $2 }'`
-wan_dns1=`ubus call network.interface.wan status | grep -A2 dns-server | awk 'NR==2, /.+/{ print $1 }' | sed -r '/(")([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(",?)/!d;s//\2/'`
-wan_dns2=`ubus call network.interface.wan status | grep -A2 dns-server | awk 'NR==3, /.+/{ print $1 }' | sed -r '/(")([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(",?)/!d;s//\2/'`
-wan_uptime=`ubus call network.interface.wan status | grep uptime | awk '/.+/{print $2}' | sed -r 's/([0-9]+)(,?)/\1/'`
-wan_uptime_days=$(( $wan_uptime/3600/24 ))                                                    
-wan_uptime_hours=$(( $wan_uptime/3600 - $wan_uptime_days*24 ))                                
-wan_uptime_minutes=$(( $wan_uptime/60 - $wan_uptime_days*24*60 - $wan_uptime_hours*60 ))
 
 lan_address=`uci get network.lan.ipaddr`
 lan_mask=`uci get network.lan.netmask`
@@ -151,7 +153,7 @@ if empty "$FORM_submit"; then
 	config_get FORM_netmask wan netmask
 	config_get FORM_gateway wan gateway
 	config_get FORM_username wan username
-	config_get FORM_passwd wan passwd
+	config_get FORM_passwd wan password
 	config_get FORM_dns wan dns
 else
 	config_get FORM_type wan type
@@ -363,10 +365,10 @@ EOF
 		fi
 	}
 
-#	validate <<EOF
-#int|FORM_wan_dowload|@TR<<WAN下载速度>>||$FORM_wan_download
-#int|FORM_wan_upload|@TR<<WAN上传速度>>||$FORM_wan_upload
-#EOF
+	validate <<EOF
+int|FORM_wan_dowload|@TR<<WAN下载速度>>||$FORM_wan_download
+int|FORM_wan_upload|@TR<<WAN上传速度>>||$FORM_wan_upload
+EOF
 	equal "$?" "0" && {
 		SAVED=1
 		uci_load qos # to check existing variables
@@ -581,7 +583,7 @@ string|$wan_dns1
 field|@TR<<DNS服务器2：>>
 string|$wan_dns2
 field|@TR<<联网时间：>>
-string|$wan_uptime_days天$wan_uptime_hours小时$wan_uptime_minutes分钟
+string|$wan_uptime_string
 end_form
 $forms2
 EOF
