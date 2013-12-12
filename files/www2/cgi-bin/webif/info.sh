@@ -52,6 +52,8 @@ fi
 
 lan_address=`uci get network.lan.ipaddr`
 lan_mask=`uci get network.lan.netmask`
+lan_mac=`ifconfig | grep ^wlan0[^-] | sed -r 's#(.+)([0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2})(.+)#\2#'`
+routerId=`cat /etc/wifixi/routerId`
 
 generate_channels() {
 	iwlist channel 2>&- |grep -q "GHz"
@@ -550,8 +552,12 @@ onchange|modechange
 start_form|@TR<<>>
 field|@TR<<路由器型号：>>                                                                                                                          
 string|WiFiSong第二代智能路由器
+field|@TR<<路由器ID：>>
+string|$routerId
 field|@TR<<固件版本：>>
 string|$wifisong_version
+field|@TR<<无线网络MAC地址：>>
+string|$lan_mac
 field|@TR<<工作模式：>>
 string|认证模式+AP模式
 field|@TR<<当前本地时间：>>
