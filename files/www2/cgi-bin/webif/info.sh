@@ -181,20 +181,24 @@ else
 				;;
 		esac
 		
-		exists /tmp/.webif/file-chilli.conf && CHILLI_CONFIG_FILE=/tmp/.webif/file-chilli.conf || CHILLI_CONFIG_FILE=/etc/chilli/defaults
-		mkdir /tmp/.webif/
-		
-		case "$FORM_proto" in
-			dhcp|static)
-		       		cat $CHILLI_CONFIG_FILE | sed -r 's/(HS_WANIF=)(.+)/\1eth1/' > /tmp/.webif/file-chilli.conf;;
-		     	pppoe)          
-				cat $CHILLI_CONFIG_FILE | sed -r 's/(HS_WANIF=)(.+)/\1pppoe-wan/' > /tmp/.webif/file-chilli.conf;;
-		esac
+		config_get FORM_old_proto wan proto
+		if [ "$FORM_proto" -ne "$FORM_old_proto" ]; then
+			exists /tmp/.webif/file-chilli.conf && CHILLI_CONFIG_FILE=/tmp/.webif/file-chilli.conf || CHILLI_CONFIG_FILE=/etc/chilli/defaults
+			mkdir /tmp/.webif/
+			case "$FORM_proto" in
+				dhcp|static)
+					cat $CHILLI_CONFIG_FILE | sed -r 's/(HS_WANIF=)(.+)/\1eth1/' > /tmp/.webif/file-chilli.conf;;
+				pppoe)
+					cat $CHILLI_CONFIG_FILE | sed -r 's/(HS_WANIF=)(.+)/\1pppoe-wan/' > /tmp/.webif/file-chilli.conf;;
+			esac
+		fi
 	}                                                            
 fi                                                                   
  
 if [ $FORM_type = "bridge" ]; then
 	wan_options="start_form|
+		field|@TR<<..................>>|field_wan_proto|hidden
+		text|wan_proto|$FORM_proto
 		field|@TR<<网络连接类型>>
 		string|中继模式
 		end_form"
