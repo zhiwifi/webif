@@ -182,7 +182,7 @@ else
 		esac
 		
 		config_get FORM_old_proto wan proto
-		if [ "$FORM_proto" -ne "$FORM_old_proto" ]; then
+		if [ "$FORM_proto" != "$FORM_old_proto" ]; then
 			exists /tmp/.webif/file-chilli.conf && CHILLI_CONFIG_FILE=/tmp/.webif/file-chilli.conf || CHILLI_CONFIG_FILE=/etc/chilli/defaults
 			mkdir /tmp/.webif/
 			case "$FORM_proto" in
