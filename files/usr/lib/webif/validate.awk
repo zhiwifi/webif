@@ -21,7 +21,7 @@ BEGIN {
 
 $1 == "int" {
 	valid_type = 1
-	if ((value != "") && (value !~ /^[[:digit:]]*$/)) { valid = 0; verr = "@TR<<Invalid value>>" }
+	if ((value != "") && (value !~ /^[[:digit:]]*$/)) { valid = 0; verr = "@TR<<数据类型应为整数>>" }
 }
 
 # two stages ip/netmask validation
@@ -169,7 +169,7 @@ $1 == "wpapsk" {
 	}
 	if ((length(value) != 0) && (length(value) < 8)) {
 		valid = 0
-		verr = "@TR<<String too short>>"
+		verr = "@TR<<密码长度至少为8位>>"
 	}
 	if ((length(value) == 64) && (value ~ /[^0-9a-fA-F]/)) {
 		valid = 0
@@ -227,7 +227,7 @@ valid == 1 {
 }
 
 valid_type == 1 {
-	if (valid == 0) error = error "@TR<<Error in>> " $3 ": " verr "<br />"
+	if (valid == 0) error = error "@TR<<错误>> " $3 ": " verr "<br />"
 }
 
 END {
