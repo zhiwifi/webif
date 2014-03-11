@@ -70,10 +70,6 @@ if [ -z "${IPKG_INSTROOT}" ]; then
 		}
 	fi
 
-	# Change the version of ROM
-	sed -r 's/.+/ws150-1.0.2/' -i /etc/version
-	/etc/wifixi/txRestart.sh
-
 fi
 
 #remove lock file if it exists otherwise it can cause issues on first apply.
