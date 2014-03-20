@@ -29,6 +29,7 @@ FORM_hostname="${FORM_hostname:-OpenWrt}"
 config_clear "$hostname_cfg"
 
 board_type=$(cat /proc/cpuinfo 2>/dev/null | sed 2,20d | cut -c16-)
+router_type=$(cat /etc/router_type)
 wifisong_version=$(cat /etc/version)
 
 wan_status=`ubus call network.interface.wan status | grep "up" | grep false`
@@ -296,36 +297,37 @@ append forms_3 "$BG_CHANNELS" "$N"
 ###################### wifi-iface ###################
 if empty "$FORM_submit"; then
 	config_get FORM_ssid cfg033579 ssid
-	config_get FORM_key cfg073579 key
+	config_get FORM_ssid2 cfg053579 ssid
+	config_get FORM_key cfg053579 key
 else
-	eval FORM_ssid_prefix="\$FORM_ssid_cfg033579"
-	eval FORM_key="\$FORM_wpa_psk_cfg073579"
+	eval FORM_ssid="\$FORM_ssid_cfg033579"
+	eval FORM_ssid2="\$FORM_ssid_cfg053579"
+	eval FORM_key="\$FORM_wpa_psk_cfg053579"
 
 validate <<EOF
 wpapsk|FORM_wpa_psk_cfg073579|@TR<<密码设置>>||$FORM_key
 EOF
 
 	if [ "$?" = 0 ]; then
-		uci_set "wireless" "cfg033579" "ssid" "$FORM_ssid_prefix"-WiFiSong
-		uci_set "wireless" "cfg073579" "ssid" "$FORM_ssid_prefix"-Office
-		uci_set "wireless" "cfg073579" "key" "$FORM_key"
+		uci_set "wireless" "cfg033579" "ssid" "$FORM_ssid"
+		uci_set "wireless" "cfg053579" "ssid" "$FORM_ssid2"
+		uci_set "wireless" "cfg053579" "key" "$FORM_key"
 	fi
 
-	FORM_ssid="$FORM_ssid_prefix"-WiFiSong
+	FORM_ssid="$FORM_ssid"
+	FORM_ssid2="$FORM_ssid2"
 fi
 
 ssid="field|@TR<<公用无线网>>|ssid_form_cfg033579
-text|ssid_cfg033579|$(echo $FORM_ssid | sed -r 's/(.+)-WiFiSong/\1/')
-string|-WiFiSong"
+text|ssid_cfg033579|$FORM_ssid"
 append forms_1 "$ssid" "$N"
 	
-ssid="field|@TR<<内部无线网>>|ssid_form_cfg073579
-string|$(echo $FORM_ssid | sed -r 's/(.+)-WiFiSong/\1/')
-string|-Office"
+ssid="field|@TR<<内部无线网>>|ssid_form_cfg053579
+text|ssid_cfg053579|$FORM_ssid2"
 append forms_2 "$ssid" "$N"
 
-wpa="field|@TR<<密码设置>>|wpapsk_cfg073579
-password|wpa_psk_cfg073579|$FORM_key"
+wpa="field|@TR<<密码设置>>|wpapsk_cfg053579
+password|wpa_psk_cfg053579|$FORM_key"
 append forms_2 "$wpa" "$N"
 ######################################################
 
@@ -529,7 +531,7 @@ fi
 cat <<EOF
 <div id="page">
 	<div id="header">
-		<h1 class="logo"><a href="info.sh">WifiSong路由器设置</a></h1>
+		<h1 class="logo"><a href="info.sh">路由器设置</a></h1>
 	</div>
 	<div id="main">
 		<div class="main-border clearfix">
@@ -555,7 +557,7 @@ display_form <<EOF
 onchange|modechange
 start_form|@TR<<>>
 field|@TR<<路由器型号：>>                                                                                                                          
-string|WiFiSong第二代智能路由器
+string|$router_type智能路由器
 field|@TR<<路由器ID：>>
 string|$routerId
 field|@TR<<固件版本：>>
@@ -666,7 +668,7 @@ cat <<EOF
 </div>
 EOF
 
-footer ?>
+wifisong_footer ?>
 
 <!--
 ##WEBIF:name:System:010:Settings

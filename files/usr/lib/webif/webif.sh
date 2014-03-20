@@ -140,9 +140,10 @@ header() {
 	
 
 	_category="$1"
-	_firmware_version="$CONFIG_general_firmware_version"
-	_firmware_name="$CONFIG_general_firmware_name"
-	_firmware_subtitle="$CONFIG_general_firmware_subtitle"
+	_firmware_name=$(cat /etc/version)
+	#_firmware_version="$CONFIG_general_firmware_version"
+	#_firmware_name="$CONFIG_general_firmware_name"
+	#_firmware_subtitle="$CONFIG_general_firmware_subtitle"
 	_use_progressbar="$CONFIG_general_use_progressbar"
 	_uptime="$(uptime)"
 	_loadavg="${_uptime#*load average: }"
@@ -487,9 +488,6 @@ cat <<EOF
 </fieldset>
 $_endform
 <hr />
-<div id="footer">
-	<h3>CopyRight © WiFiSong</h3>
-</div>
 </div> <!-- End #container -->
 </body>
 </html>

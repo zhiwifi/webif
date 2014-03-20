@@ -98,30 +98,6 @@ cat <<EOF
 </tbody>
 </table>
 <br />
-<table summary="Webif Information">
-<tbody>
-	<tr>
-		<td><strong>@TR<<Web mgt. console>></strong></td><td>&nbsp;</td>
-		<td>Webif&sup2;</td>
-	</tr>
-	<tr>
-		<td><strong>@TR<<Version>></strong></td><td></td><td>$revision_text</td>
-	</tr>
-</tbody>
-</table>
-
-<form action="" enctype="multipart/form-data" method="post">
-<table summary="Update webif">
-<tbody>
-	<tr>
-		<td colspan="2">
-		<input type="submit" value=" @TR<<info_check_update#Check For Webif Update>> " name="update_check" />
-		$upgrade_button
-		</td>
-	</tr>
-</tbody>
-</table>
-</form>
 
 EOF
 
