@@ -531,7 +531,7 @@ fi
 cat <<EOF
 <div id="page">
 	<div id="header">
-		<h1 class="logo"><a href="info.sh">路由器设置</a></h1>
+		<h1 class="logo"><a href="info.sh">$brand_name路由器设置</a></h1>
 	</div>
 	<div id="main">
 		<div class="main-border clearfix">

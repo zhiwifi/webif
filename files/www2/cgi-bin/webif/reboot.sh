@@ -24,11 +24,11 @@ var bar1=createBar(350,15,'white',1,'black','blue',85,7,3,'');
 fi
 
 wifisong_header "System" "Reboot" ""
-?>
 
+cat <<EOF
 <div id="page">
     <div id="header">
-        <h1 class="logo"><a href="info.sh">路由器设置</a></h1>
+        <h1 class="logo"><a href="info.sh">$brand_name路由器设置</a></h1>
     </div>
     <div id="main">
         <div class="main-border clearfix">
@@ -46,7 +46,11 @@ wifisong_header "System" "Reboot" ""
                     <div class="col-bd">
 			<table width="90%" border="0" cellpadding="2" cellspacing="2" align="center">
 				<tr>
-					<td><script type="text/javascript" src="/js/progress.js"></script><? echo -n "$reboot_msg" ?><br/><br/><br/></td>
+					<td><script type="text/javascript" src="/js/progress.js"></script>
+EOF
+echo -n "$reboot_msg"
+cat <<EOF
+					<br/><br/><br/></td>
 				</tr>
 			</table>
                     </div>
@@ -55,8 +59,9 @@ wifisong_header "System" "Reboot" ""
         </div>
     </div>
 </div>
+EOF
 
-<? wifisong_footer ?>
+wifisong_footer ?>
 <?
 ! empty "$FORM_reboot" && {
 	reboot &

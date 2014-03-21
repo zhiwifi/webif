@@ -23,9 +23,9 @@ cachetime=7200			# cache time-out: 5 days
 . /usr/lib/webif/functions.sh
 . /lib/config/uci.sh
 
-
 uci_load "webif"
 _device="$CONFIG_general_device_name"
+brand_name=`cat /etc/init_config | grep brand_name | sed -r 's/brand_name=(.+)/\1/'`
 
 init_cache() {
 	[ -d $cachedir ] || mkdir $cachedir 2>/dev/null 1>&2
@@ -335,7 +335,7 @@ Pragma: no-cache
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<title>@TR<<wifisong路由器设置>></title>
+<title>@TR<<$brand_name路由器设置>></title>
 	<link rel="stylesheet" type="text/css" href="/css/index.css" media="screen" />
 	<link rel="stylesheet" type="text/css" href="/css/index.css" />
 	$webif_header_title
